@@ -118,14 +118,14 @@
 <header>
   <h1>Personal RAG — ChatGPT History</h1>
   <div class="actions">
-    <span class="status" id="connStatus">not connected</span>
+    <span class="status" id="connStatus">loading config...</span>
     <button class="small" onclick="clearHistory()">Clear conversation</button>
   </div>
 </header>
 
 <div id="endpointBar">
-  <input id="endpointInput" placeholder="https://your-tunnel-subdomain.trycloudflare.com" />
-  <button onclick="saveEndpoint()">Connect</button>
+  <input id="apiKeyInput" type="password" placeholder="Paste the API key you were given (saved locally, entered once)" />
+  <button onclick="saveApiKey()">Save key</button>
 </div>
 
 <div id="chat"></div>
@@ -136,9 +136,45 @@
 </div>
 
 <script>
-  let endpoint = localStorage.getItem("ragEndpoint") || "";
-  document.getElementById("endpointInput").value = endpoint;
-  updateConnStatus();
+  // ---------------------------------------------------------------------
+  // CONFIG_URL: raw.githubusercontent.com URL to config.json in your repo.
+  // deploy.sh overwrites config.json with the latest tunnel URL on every
+  // restart, so this page always finds the currently-live backend without
+  // anyone editing this HTML file again.
+  //
+  // Fill this in once you've created the repo, e.g.:
+  //   https://raw.githubusercontent.com/samin96/rag-frontend/main/config.json
+  // ---------------------------------------------------------------------
+  const CONFIG_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/config.json";
+
+  let endpoint = "";
+
+  async function loadEndpointFromConfig() {
+    try {
+      // cache-bust so browsers/CDNs don't serve a stale URL
+      const res = await fetch(CONFIG_URL + "?t=" + Date.now());
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const cfg = await res.json();
+      endpoint = cfg.apiUrl;
+      document.getElementById("connStatus").textContent = "connected: " + endpoint;
+    } catch (err) {
+      document.getElementById("connStatus").textContent = "config load failed: " + err.message;
+    }
+  }
+  loadEndpointFromConfig();
+  // Re-check periodically in case the backend restarted with a new tunnel
+  // URL while this page is already open.
+  setInterval(loadEndpointFromConfig, 60000);
+
+  // API key: entered once by whoever's using the page, kept only in their
+  // browser's localStorage, never touches the public repo/config.json.
+  let apiKey = localStorage.getItem("ragApiKey") || "";
+  document.getElementById("apiKeyInput").value = apiKey;
+
+  function saveApiKey() {
+    apiKey = document.getElementById("apiKeyInput").value.trim();
+    localStorage.setItem("ragApiKey", apiKey);
+  }
 
   // ---------------------------------------------------------------------
   // Conversation history: this is what makes the app stateful. The server
@@ -165,17 +201,7 @@
   }
   renderExistingHistory();
 
-  function updateConnStatus() {
-    document.getElementById("connStatus").textContent = endpoint ? "connected: " + endpoint : "not connected";
-  }
-
-  function saveEndpoint() {
-    endpoint = document.getElementById("endpointInput").value.trim().replace(/\/$/, "");
-    localStorage.setItem("ragEndpoint", endpoint);
-    updateConnStatus();
-  }
-
-  function handleKey(e) {
+function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -212,7 +238,11 @@
     const text = input.value.trim();
     if (!text) return;
     if (!endpoint) {
-      alert("Set your Cloudflare tunnel URL above first.");
+      alert("Backend URL hasn't loaded yet — wait a moment or check your connection.");
+      return;
+    }
+    if (!apiKey) {
+      alert("Paste your API key above and click Save key first.");
       return;
     }
 
@@ -229,7 +259,10 @@
     try {
       const res = await fetch(endpoint + "/chat/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": apiKey
+        },
         body: JSON.stringify({ message: text, history: history })
       });
       if (!res.ok || !res.body) throw new Error("HTTP " + res.status);
