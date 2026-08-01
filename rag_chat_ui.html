@@ -123,11 +123,6 @@
   </div>
 </header>
 
-<div id="endpointBar">
-  <input id="apiKeyInput" type="password" placeholder="Paste the API key you were given (saved locally, entered once)" />
-  <button onclick="saveApiKey()">Save key</button>
-</div>
-
 <div id="chat"></div>
 
 <div id="inputBar">
@@ -165,16 +160,6 @@
   // Re-check periodically in case the backend restarted with a new tunnel
   // URL while this page is already open.
   setInterval(loadEndpointFromConfig, 60000);
-
-  // API key: entered once by whoever's using the page, kept only in their
-  // browser's localStorage, never touches the public repo/config.json.
-  let apiKey = localStorage.getItem("ragApiKey") || "";
-  document.getElementById("apiKeyInput").value = apiKey;
-
-  function saveApiKey() {
-    apiKey = document.getElementById("apiKeyInput").value.trim();
-    localStorage.setItem("ragApiKey", apiKey);
-  }
 
   // ---------------------------------------------------------------------
   // Conversation history: this is what makes the app stateful. The server
@@ -241,10 +226,6 @@ function handleKey(e) {
       alert("Backend URL hasn't loaded yet — wait a moment or check your connection.");
       return;
     }
-    if (!apiKey) {
-      alert("Paste your API key above and click Save key first.");
-      return;
-    }
 
     appendMsg(text, "user");
     input.value = "";
@@ -259,10 +240,7 @@ function handleKey(e) {
     try {
       const res = await fetch(endpoint + "/chat/stream", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": apiKey
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, history: history })
       });
       if (!res.ok || !res.body) throw new Error("HTTP " + res.status);
