@@ -423,7 +423,7 @@
             contentEl.textContent = fullText;
             document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
           } else if (frame.event === "done") {
-            if (standalone && standalone !== "NO_RETRIEVAL_NEEDED" && standalone.trim() !== text.trim()) {
+            if (standalone && standalone.trim() !== text.trim()) {
               const sd = document.createElement("div");
               sd.className = "meta-line standalone";
               sd.textContent = "searched as: " + standalone;
