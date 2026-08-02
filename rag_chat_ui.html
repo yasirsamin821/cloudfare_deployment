@@ -2,133 +2,259 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Personal RAG Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Personal RAG</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --border: #2a2e38;
-    --text: #e6e6e6;
-    --muted: #8a8f98;
-    --accent: #5b8cff;
-    --user-bubble: #2a3550;
-    --bot-bubble: #1f232c;
+    --bg: #0d0e10;
+    --surface: #16181c;
+    --surface2: #1e2126;
+    --border: #2a2d35;
+    --border2: #3a3e48;
+    --text: #e8eaf0;
+    --muted: #7a7f8e;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12);
+    --model-bg: #111316;
+    --danger: #f87171;
   }
-  * { box-sizing: border-box; }
+
   body {
-    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
+
   header {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 10px;
+    flex-wrap: wrap;
   }
-  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
-  header .actions { display: flex; gap: 10px; align-items: center; }
-  header button.small {
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 40vw;
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .dot.online { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .dot.error { background: var(--danger); }
+
+  #clear-btn {
     background: none;
     border: 1px solid var(--border);
     color: var(--muted);
-    padding: 5px 10px;
-    border-radius: 6px;
     font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 4px;
     cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  header button.small:hover { color: var(--text); border-color: var(--accent); }
-  #endpointBar {
-    display: flex;
-    gap: 8px;
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel);
-  }
-  #endpointBar input {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-  }
-  #endpointBar button {
-    background: var(--accent);
-    border: none;
-    color: white;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  #chat {
+  #clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Messages */
+  #messages {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.25rem 0;
+    scroll-behavior: smooth;
   }
-  .msg { max-width: 75%; padding: 10px 14px; border-radius: 10px; line-height: 1.45; font-size: 14px; white-space: pre-wrap; }
-  .user { align-self: flex-end; background: var(--user-bubble); }
-  .bot { align-self: flex-start; background: var(--bot-bubble); }
-  .sources, .standalone { font-size: 11px; color: var(--muted); margin-top: 6px; }
-  .standalone { font-style: italic; }
-  #inputBar {
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .msg {
+    padding: 0.6rem 1.25rem;
+    display: flex;
+    gap: 12px;
+    max-width: 860px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .avatar {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .msg.user .avatar { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .msg.bot .avatar { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(74,222,128,0.25); }
+
+  .content {
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg.user .content { color: #c8cad2; }
+
+  .meta-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .meta-line.standalone { font-style: italic; }
+
+  .typing {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    height: 20px;
+  }
+  .typing span {
+    width: 5px; height: 5px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+  .empty-state {
+    max-width: 860px;
+    margin: 4rem auto;
+    padding: 0 1.5rem;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-state .big { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--accent); margin-bottom: 0.5rem; }
+  .empty-state p { font-size: 13px; }
+
+  /* Input area */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    flex-shrink: 0;
+  }
+
+  .input-row {
     display: flex;
     gap: 10px;
-    padding: 16px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--panel);
+    max-width: 860px;
+    margin: 0 auto;
+    align-items: flex-end;
   }
-  #inputBar textarea {
+
+  #input {
     flex: 1;
-    resize: none;
-    background: var(--bg);
+    background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text);
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+    padding: 10px 14px;
+    border-radius: 6px;
+    outline: none;
+    resize: none;
+    min-height: 44px;
+    max-height: 160px;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+    overflow-y: auto;
+  }
+  #input:focus { border-color: var(--border2); }
+  #input::placeholder { color: var(--muted); }
+
+  #send-btn {
+    background: var(--accent-dim);
+    border: 1px solid rgba(74,222,128,0.35);
+    color: var(--accent);
+    width: 44px;
     height: 44px;
-  }
-  #inputBar button {
-    background: var(--accent);
-    border: none;
-    color: white;
-    padding: 0 20px;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  #inputBar button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .status { font-size: 12px; color: var(--muted); align-self: flex-start; }
+  #send-btn:hover:not(:disabled) { background: var(--accent); color: #000; }
+  #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  #send-btn svg { width: 16px; height: 16px; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Personal RAG — ChatGPT History</h1>
-  <div class="actions">
-    <span class="status" id="connStatus">loading config...</span>
-    <button class="small" onclick="clearHistory()">Clear conversation</button>
+  <div class="logo">rag//chatgpt-history</div>
+  <div class="status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">loading config...</span>
   </div>
+  <button id="clear-btn" onclick="clearHistory()">clear chat</button>
 </header>
 
-<div id="chat"></div>
-
-<div id="inputBar">
-  <textarea id="messageInput" placeholder="Ask something from your past conversations..." onkeydown="handleKey(event)"></textarea>
-  <button id="sendBtn" onclick="sendMessage()">Send</button>
+<div id="messages">
+  <div class="empty-state" id="empty-state">
+    <div class="big">// ready</div>
+    <p>Connecting to your backend...</p>
+  </div>
 </div>
+
+<footer>
+  <div class="input-row">
+    <textarea id="input" placeholder="Ask something from your past conversations..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="send-btn" onclick="sendMessage()" disabled>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2L8 8M14 2L10 13.5L8 8M14 2L2.5 6L8 8"/>
+      </svg>
+    </button>
+  </div>
+</footer>
 
 <script>
   // ---------------------------------------------------------------------
@@ -136,29 +262,34 @@
   // deploy.sh overwrites config.json with the latest tunnel URL on every
   // restart, so this page always finds the currently-live backend without
   // anyone editing this HTML file again.
-  //
-  // Fill this in once you've created the repo, e.g.:
-  //   https://raw.githubusercontent.com/samin96/rag-frontend/main/config.json
   // ---------------------------------------------------------------------
-  const CONFIG_URL = "https://raw.githubusercontent.com/yasirsamin821/cloudfare_deployment/main/config.json";
+  const CONFIG_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/config.json";
 
   let endpoint = "";
 
+  function setStatus(text, cls) {
+    document.getElementById('status-text').textContent = text;
+    document.getElementById('status-dot').className = 'dot ' + cls;
+  }
+
   async function loadEndpointFromConfig() {
     try {
-      // cache-bust so browsers/CDNs don't serve a stale URL
       const res = await fetch(CONFIG_URL + "?t=" + Date.now());
       if (!res.ok) throw new Error("HTTP " + res.status);
       const cfg = await res.json();
       endpoint = cfg.apiUrl;
-      document.getElementById("connStatus").textContent = "connected: " + endpoint;
+      setStatus(endpoint.replace(/^https?:\/\//, ''), 'online');
+      document.getElementById('send-btn').disabled = false;
+      if (!history.length) {
+        document.getElementById('empty-state').innerHTML =
+          '<div class="big">// connected</div><p>Ask something from your past conversations.</p>';
+      }
     } catch (err) {
-      document.getElementById("connStatus").textContent = "config load failed: " + err.message;
+      setStatus('config load failed', 'error');
+      document.getElementById('send-btn').disabled = true;
     }
   }
   loadEndpointFromConfig();
-  // Re-check periodically in case the backend restarted with a new tunnel
-  // URL while this page is already open.
   setInterval(loadEndpointFromConfig, 60000);
 
   // ---------------------------------------------------------------------
@@ -175,32 +306,46 @@
   function clearHistory() {
     history = [];
     saveHistoryToStorage();
-    document.getElementById("chat").innerHTML = "";
+    document.getElementById("messages").innerHTML =
+      '<div class="empty-state" id="empty-state"><div class="big">// cleared</div><p>Conversation reset.</p></div>';
   }
 
-  // Re-render any history already stored, e.g. after a page refresh.
   function renderExistingHistory() {
     for (const turn of history) {
-      appendMsg(turn.content, turn.role === "user" ? "user" : "bot");
+      addMsg(turn.role === "user" ? "user" : "bot", turn.content);
     }
   }
   renderExistingHistory();
 
-function handleKey(e) {
+  function addMsg(role, content, isTyping = false) {
+    document.getElementById('empty-state')?.remove();
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    const label = role === 'user' ? 'you' : 'ai';
+    div.innerHTML = `
+      <div class="avatar">${label}</div>
+      <div class="content">${isTyping ? '<div class="typing"><span></span><span></span><span></span></div>' : escHtml(content)}</div>
+    `;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div.querySelector('.content');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   }
 
-  function appendMsg(text, cls) {
-    const chat = document.getElementById("chat");
-    const div = document.createElement("div");
-    div.className = "msg " + cls;
-    div.appendChild(document.createTextNode(text));
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-    return div;
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
   }
 
   function parseSSEFrames(rawText) {
@@ -218,8 +363,11 @@ function handleKey(e) {
       });
   }
 
+  let isStreaming = false;
+
   async function sendMessage() {
-    const input = document.getElementById("messageInput");
+    if (isStreaming) return;
+    const input = document.getElementById("input");
     const text = input.value.trim();
     if (!text) return;
     if (!endpoint) {
@@ -227,12 +375,14 @@ function handleKey(e) {
       return;
     }
 
-    appendMsg(text, "user");
+    addMsg("user", text);
     input.value = "";
-    const sendBtn = document.getElementById("sendBtn");
-    sendBtn.disabled = true;
+    autoResize(input);
 
-    const botDiv = appendMsg("", "bot");
+    isStreaming = true;
+    document.getElementById("send-btn").disabled = true;
+
+    const contentEl = addMsg("bot", "", true);
     let fullText = "";
     let sources = [];
     let standalone = "";
@@ -248,6 +398,7 @@ function handleKey(e) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let firstToken = true;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -267,41 +418,41 @@ function handleKey(e) {
           } else if (frame.event === "sources") {
             sources = JSON.parse(frame.data);
           } else if (frame.event === "token") {
+            if (firstToken) { contentEl.innerHTML = ""; firstToken = false; }
             fullText += JSON.parse(frame.data);
-            botDiv.firstChild
-              ? (botDiv.firstChild.textContent = fullText)
-              : botDiv.appendChild(document.createTextNode(fullText));
-            document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+            contentEl.textContent = fullText;
+            document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
           } else if (frame.event === "done") {
             if (standalone && standalone.trim() !== text.trim()) {
               const sd = document.createElement("div");
-              sd.className = "standalone";
-              sd.textContent = "Searched as: " + standalone;
-              botDiv.appendChild(sd);
+              sd.className = "meta-line standalone";
+              sd.textContent = "searched as: " + standalone;
+              contentEl.parentElement.appendChild(sd);
             }
             if (sources.length) {
               const src = document.createElement("div");
-              src.className = "sources";
-              src.textContent = "Sources: " + sources.join(", ");
-              botDiv.appendChild(src);
+              src.className = "meta-line";
+              src.textContent = "sources: " + sources.join(", ");
+              contentEl.parentElement.appendChild(src);
             }
           }
         }
       }
 
       if (fullText) {
-        // Commit this turn to history now that it's complete, then persist.
         history.push({ role: "user", content: text });
         history.push({ role: "assistant", content: fullText });
         saveHistoryToStorage();
       } else {
-        botDiv.remove();
+        contentEl.closest('.msg').remove();
       }
     } catch (err) {
-      botDiv.textContent = "Error: " + err.message;
-    } finally {
-      sendBtn.disabled = false;
+      contentEl.innerHTML = `<span style="color:var(--danger)">Error: ${escHtml(err.message)}</span>`;
     }
+
+    isStreaming = false;
+    document.getElementById("send-btn").disabled = false;
+    document.getElementById("input").focus();
   }
 </script>
 
