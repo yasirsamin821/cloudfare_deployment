@@ -427,13 +427,13 @@
               const sd = document.createElement("div");
               sd.className = "meta-line standalone";
               sd.textContent = "searched as: " + standalone;
-              contentEl.parentElement.appendChild(sd);
+              contentEl.appendChild(sd);
             }
             if (sources.length) {
               const src = document.createElement("div");
               src.className = "meta-line";
               src.textContent = "sources: " + sources.join(", ");
-              contentEl.parentElement.appendChild(src);
+              contentEl.appendChild(src);
             }
           }
         }
