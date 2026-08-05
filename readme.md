@@ -6,7 +6,7 @@ A retrieval-augmented chat interface built over my own ChatGPT export (3,800+ co
 
 ## 🔗 Live URL
 
-**Frontend (chat UI):** [rag_chat_ui.html](https://github.com/yasirsamin821/cloudfare_deployment/blob/main/rag_chat_ui.html)
+**Frontend (chat UI):** [rag_chat_ui.html](https://yasirsamin821.github.io/cloudfare_deployment/rag_chat_ui.html)
 
 
 > ⚠️ This is only reachable while my machine is on and the tunnel is running (see [Uptime notes](#known-limitations) below). If using a quick tunnel, the backend URL changes on every restart — check the terminal output or `~/.cloudflared/config.yml` for the current one, and update the frontend config if it's stale.
